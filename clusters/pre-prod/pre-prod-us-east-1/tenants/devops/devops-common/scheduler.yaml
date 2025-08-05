@@ -25,9 +25,11 @@ spec:
   lifecycle:
     restartPolicy: OnFailure
     backoffLimit: 6
+    activeDeadlineSeconds: 100
     ttlSecondsAfterFinished: 21600
   deployment:
     suspend: false
+    startingDeadlineSeconds: 10
     automateImageUpdates: true
     applicationRepositoryBranch: main
   securityContext:
