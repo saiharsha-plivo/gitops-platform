@@ -28,7 +28,7 @@ spec:
     minReplicas: 1
     averageCPUUtilizationTarget: 60
     averageMemoryUtilizationTarget: 60
-  image: sample
+  image: testing
   consul: https://consul.non-prod.plivops.com
   securityContext:
     runAsUser: 0
