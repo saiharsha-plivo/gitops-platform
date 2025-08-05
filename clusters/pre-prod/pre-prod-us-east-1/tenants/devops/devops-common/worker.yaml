@@ -6,14 +6,14 @@ metadata:
   annotations:
     filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/devops/devops-common/worker
 spec:
-  replicas: 1
+  replicas: 10
   resources:
     requests:
-      cpu: 100m
-      memory: 100Mi
+      cpu: 1000m
+      memory: 1000Mi
     limits:
-      cpu: 100m
-      memory: 100Mi
+      cpu: 1000m
+      memory: 1000Mi
   entrypoint:
     command: [cmd]
     args: [arg]
@@ -26,7 +26,7 @@ spec:
     minReplicas: 5
     averageCPUUtilizationTarget: 60
     averageMemoryUtilizationTarget: 60
-  image: "worker:latest"
+  image: worker
   consul: "https://consul.non-prod.plivops.com"
   securityContext:
     runAsUser: 0
