@@ -1,6 +1,6 @@
 apiVersion: ops.plivo.com/v1alpha1
 kind: Worker
-metadata: 
+metadata:
   name: sample
   namespace: devops
   annotations:
@@ -15,8 +15,10 @@ spec:
       cpu: 100m
       memory: 100Mi
   entrypoint:
-    command: [cmd]
-    args: [arg]
+    command:
+      - cmd
+    args:
+      - arg
   deployment:
     automateImageUpdates: true
     applicationRepositoryBranch: main
@@ -26,12 +28,12 @@ spec:
     minReplicas: 1
     averageCPUUtilizationTarget: 60
     averageMemoryUtilizationTarget: 60
-  image: sampler
-  consul: "https://consul.non-prod.plivops.com"
+  image: sampler-test
+  consul: https://consul.non-prod.plivops.com
   securityContext:
     runAsUser: 0
     runAsNonRoot: false
     runAsGroup: 0
   advanced:
-    additionalEnvVars: 
+    additionalEnvVars:
       sample: value
