@@ -36,7 +36,8 @@ spec:
     public: false
     externalDNSNames: []
     customListenerRules: []
-    listenerPorts: [443]
+    listenerPorts:
+      - 443
     targetGroup:
       healthcheck:
         path: /
@@ -45,8 +46,8 @@ spec:
     runAsUser: 10001
     runAsNonRoot: true
     runAsGroup: 10001
-  consul: "https://consul.non-prod.plivops.com"
+  consul: https://consul.non-prod.plivops.com
   containerPort: 8080
-  image: nginx
+  image: nginx:latest
   advanced:
     additionalEnvVars: {}
