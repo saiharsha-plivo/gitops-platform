@@ -15,22 +15,23 @@ spec:
       cpu: 100m
       memory: 100Mi
   entrypoint:
-    command: []
-    args: []
+    command: [cmd]
+    args: [arg]
   deployment:
-    automateImageUpdates: false
-    applicationRepositoryBranch: null
+    automateImageUpdates: true
+    applicationRepositoryBranch: main
   autoscaling:
     controller: HorizontalPodAutoscaler
-    maxReplicas: 100
+    maxReplicas: 7
     minReplicas: 1
-    averageCPUUtilizationTarget: 70
-    averageMemoryUtilizationTarget: 70
+    averageCPUUtilizationTarget: 60
+    averageMemoryUtilizationTarget: 60
   image: sampler
   consul: "https://consul.non-prod.plivops.com"
   securityContext:
-    runAsUser: 10001
-    runAsNonRoot: true
-    runAsGroup: 10001
+    runAsUser: 0
+    runAsNonRoot: false
+    runAsGroup: 0
   advanced:
-    additionalEnvVars: []
+    additionalEnvVars: 
+      sample: value
