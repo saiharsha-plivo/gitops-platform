@@ -1,6 +1,6 @@
 apiVersion: ops.plivo.com/v1alpha1
 kind: Worker
-metadata: 
+metadata:
   name: worker
   namespace: devops
   annotations:
@@ -26,8 +26,8 @@ spec:
     minReplicas: 1
     averageCPUUtilizationTarget: 70
     averageMemoryUtilizationTarget: 70
-  image: worker
-  consul: "https://consul.non-prod.plivops.com"
+  image: worker:latest
+  consul: https://consul.non-prod.plivops.com
   securityContext:
     runAsUser: 10001
     runAsNonRoot: true
