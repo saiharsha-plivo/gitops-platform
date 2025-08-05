@@ -1,0 +1,53 @@
+apiVersion: ops.plivo.com/v1alpha1
+kind: WebService
+metadata:
+  name: tester
+  namespace: devops
+  annotations:
+    filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/devops/devops-common/tester
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 100m
+      memory: 100Mi
+  entrypoint:
+    command: []
+    args: []
+  autoscaling:
+    controller: HorizontalPodAutoscaler
+    maxReplicas: 100
+    minReplicas: 1
+    averageCPUUtilizationTarget: 70
+    averageMemoryUtilizationTarget: 70
+  persistence:
+    enabled: true
+    storageClass: gp3
+    size: null
+    mountPath: /data
+  deployment:
+    automateImageUpdates: true
+    applicationRepositoryBranch: main
+  loadbalancing:
+    useCommonLoadbalancer: true
+    public: false
+    externalDNSNames: []
+    customListenerRules: []
+    listenerPorts: [443]
+    targetGroup:
+      healthcheck:
+        path: /
+        initialDelaySeconds: 0
+  securityContext:
+    runAsUser: 10001
+    runAsNonRoot: true
+    runAsGroup: 10001
+  consul: "https://consul.non-prod.plivops.com"
+  containerPort: 8080
+  image: tester
+  advanced:
+    additionalEnvVars: 
+      sample: value
