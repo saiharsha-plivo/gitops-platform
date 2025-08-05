@@ -1,3 +1,4 @@
+
 apiVersion: ops.plivo.com/v1alpha1
 kind: ScheduledTask
 metadata:
@@ -14,12 +15,12 @@ spec:
       cpu: 100m
       memory: 100Mi
   entrypoint:
-    command: []
-    args: []
+    command: [cmd]
+    args: [arg]
   persistence:
-    enabled: false
+    enabled: true
     storageClass: gp3
-    storageSize: 10
+    storageSize: 20
     mountPath: /data
   lifecycle:
     restartPolicy: OnFailure
@@ -27,13 +28,16 @@ spec:
     ttlSecondsAfterFinished: 21600
   deployment:
     suspend: false
-    automateImageUpdates: false
+    automateImageUpdates: true
+    applicationRepositoryBranch: main
   securityContext:
-    runAsUser: 10001
-    runAsNonRoot: true
-    runAsGroup: 10001
-  image: scheduler:latest
+    runAsUser: 0
+    runAsNonRoot: false
+    runAsGroup: 0
+  image: "scheduler:latest"
   schedule: "* * * * *"
   advanced:
-    exposePodInfo: false
-    additionalEnvVars: {}
+    exposePodInfo: true
+    serviceAccount: sample
+    additionalEnvVars: 
+      sample: value
