@@ -26,7 +26,7 @@ spec:
   persistence:
     enabled: true
     storageClass: gp3
-    size: 19
+    storageSize: 19
     mountPath: /data
   deployment:
     automateImageUpdates: true
