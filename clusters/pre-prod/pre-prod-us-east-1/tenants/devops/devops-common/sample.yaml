@@ -1,0 +1,36 @@
+apiVersion: ops.plivo.com/v1alpha1
+kind: Worker
+metadata: 
+  name: sample
+  namespace: devops
+  annotations:
+    filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/devops/devops-common/sample
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 100m
+      memory: 100Mi
+  entrypoint:
+    command: []
+    args: []
+  deployment:
+    automateImageUpdates: false
+    applicationRepositoryBranch: null
+  autoscaling:
+    controller: HorizontalPodAutoscaler
+    maxReplicas: 100
+    minReplicas: 1
+    averageCPUUtilizationTarget: 70
+    averageMemoryUtilizationTarget: 70
+  image: sampler
+  consul: "https://consul.non-prod.plivops.com"
+  securityContext:
+    runAsUser: 10001
+    runAsNonRoot: true
+    runAsGroup: 10001
+  advanced:
+    additionalEnvVars: null
