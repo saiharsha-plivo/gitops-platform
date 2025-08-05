@@ -25,6 +25,7 @@ spec:
   lifecycle:
     restartPolicy: OnFailure
     backoffLimit: 6
+    activeDeadlineSeconds: 10
     ttlSecondsAfterFinished: 21600
   deployment:
     suspend: false
