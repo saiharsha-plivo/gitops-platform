@@ -15,7 +15,8 @@ spec:
       cpu: 100m
       memory: 100Mi
   entrypoint:
-    command: [mainer]
+    command:
+      - mainer
     args: []
   autoscaling:
     controller: HorizontalPodAutoscaler
@@ -36,7 +37,8 @@ spec:
     public: false
     externalDNSNames: []
     customListenerRules: []
-    listenerPorts: [443]
+    listenerPorts:
+      - 443
     targetGroup:
       healthcheck:
         path: /
@@ -45,9 +47,9 @@ spec:
     runAsUser: 10001
     runAsNonRoot: true
     runAsGroup: 10001
-  consul: "https://consul.non-prod.plivops.com"
+  consul: https://consul.non-prod.plivops.com
   containerPort: 8080
-  image: tester
+  image: testing
   advanced:
-    additionalEnvVars: 
+    additionalEnvVars:
       sample: value
