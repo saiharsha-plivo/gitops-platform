@@ -55,6 +55,9 @@ spec:
   - name: devops-common-nginx-configmap
     usageMethod: AsEnvVariables
     sensitive: false
+  - name: devops-common-nginx
+    usageMethod: AsEnvVariables
+    sensitive: false
 ---
 apiVersion: v1
 kind: ConfigMap
