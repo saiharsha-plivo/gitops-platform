@@ -9,11 +9,11 @@ spec:
   replicas: 1
   resources:
     requests:
-      cpu: "100m"
-      memory: "100Mi"
+      cpu: 100m
+      memory: 100Mi
     limits:
-      cpu: "100m"
-      memory: "100Mi"
+      cpu: 100m
+      memory: 100Mi
   entrypoint:
     command: []
     args: []
@@ -36,8 +36,8 @@ spec:
     public: false
     externalDNSNames: []
     customListenerRules: []
-    listenerPorts: 
-    - 443
+    listenerPorts:
+      - 443
     targetGroup:
       healthcheck:
         path: /
@@ -46,30 +46,18 @@ spec:
     runAsUser: 10001
     runAsNonRoot: true
     runAsGroup: 10001
-  consul: "https://consul.non-prod.plivops.com"
+  consul: https://consul.non-prod.plivops.com
   containerPort: 80
-  image: nginx
+  image: nginx:latest
   advanced:
     additionalEnvVars: {}
-  configuration: 
-  - name: devops-common-nginx-configmap
-    usageMethod: AsEnvVariables
-    sensitive: false
-  - name: devops-common-nginx
-    usageMethod: AsEnvVariables
-    sensitive: false
-  - name: sample
-    usageMethod: AsEnvVariables
-    sensitive: true
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: devops-common-nginx-configmap
-  namespace: devops
-  annotations:
-    filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/devops/devops-common/nginx
-data: 
-  key1: val1
-  key2: val2
-  key3: val3
+  configuration:
+    - name: devops-common-nginx-configmap
+      usageMethod: AsEnvVariables
+      sensitive: false
+    - name: devops-common-nginx
+      usageMethod: AsEnvVariables
+      sensitive: false
+    - name: sample
+      usageMethod: AsEnvVariables
+      sensitive: true
