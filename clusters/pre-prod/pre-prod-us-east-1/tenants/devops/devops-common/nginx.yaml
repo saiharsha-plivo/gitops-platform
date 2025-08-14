@@ -52,9 +52,6 @@ spec:
   advanced:
     additionalEnvVars: {}
   configuration:
-    - name: devops-common-nginx-configmap
-      usageMethod: AsEnvVariables
-      sensitive: false
     - name: devops-common-nginx
       usageMethod: AsEnvVariables
       sensitive: false
