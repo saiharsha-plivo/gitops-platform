@@ -9,11 +9,11 @@ spec:
   replicas: 1
   resources:
     requests:
-      cpu: "100m"
-      memory: "100Mi"
+      cpu: 100m
+      memory: 100Mi
     limits:
-      cpu: "100m"
-      memory: "100Mi"
+      cpu: 100m
+      memory: 100Mi
   entrypoint:
     command: []
     args: []
@@ -36,7 +36,7 @@ spec:
     public: false
     externalDNSNames: []
     customListenerRules: []
-    listenerPorts: 
+    listenerPorts:
       - 443
     targetGroup:
       healthcheck:
@@ -46,18 +46,19 @@ spec:
     runAsUser: 10001
     runAsNonRoot: true
     runAsGroup: 10001
-  consul: "https://consul.non-prod.plivops.com"
+  consul: https://consul.non-prod.plivops.com
   containerPort: 80
-  image: "nginx:latest"
+  image: nginx
   advanced:
     additionalEnvVars: {}
-  configuration: 
+  configuration:
     - name: devops-common-nginx
       usageMethod: AsEnvVariables
       sensitive: false
     - name: sample
       usageMethod: AsEnvVariables
       sensitive: true
+
 ---
 apiVersion: v1
 kind: ConfigMap
