@@ -51,24 +51,4 @@ spec:
   image: "nginx:latest"
   advanced:
     additionalEnvVars: {}
-  configuration: 
-    - name: devops-common-nginx
-      usageMethod: AsEnvVariables
-      sensitive: false
-    - name: sample-1
-      usageMethod: AsEnvVariables
-      sensitive: true
-    - name: sample-2
-      usageMethod: AsEnvVariables
-      sensitive: true
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: devops-common-nginx
-  namespace: devops
-  annotations:
-    filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/devops/devops-common/nginx
-data: 
-  key1: val1
-  key2: val2
+  configuration: []
