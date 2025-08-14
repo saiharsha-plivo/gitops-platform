@@ -1,0 +1,40 @@
+apiVersion: aws.crossplane.io/v1beta1
+kind: IamRole
+metadata:
+  name: pp-dvops-de-co-sample
+spec:
+  provider: "providerconfig-aws"
+  managementPolicies:
+    - "*"
+  deletionPolicy: "Delete"
+  Role:
+    description: "sample"
+    name: pp-dvops-de-co-sample
+    assumeRolePolicyDocument: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "secretsmanager.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      }
+    tags:
+      - key: "Environment"
+        value: "pre-prod"
+      - key: "Team"
+        value: "devops"
+      - key: Service
+        value: "devops-common"
+      - key: "Billing"
+        value: "devops"
+      - key: "Name"
+        value: "pp-dvops-de-co-sample"
+  RolePolicyAttachment:
+    - policyArn: "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+      roleName: "pp-dvops-de-co-sample"
+      name: pp-dvops-de-co-sample-rpa-0
