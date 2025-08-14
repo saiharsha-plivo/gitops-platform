@@ -1,4 +1,3 @@
-
 apiVersion: ops.plivo.com/v1alpha1
 kind: ScheduledTask
 metadata:
@@ -9,14 +8,16 @@ metadata:
 spec:
   resources:
     requests:
-      cpu: 100m
-      memory: 100Mi
+      cpu: "100m"
+      memory: "100Mi"
     limits:
-      cpu: 100m
-      memory: 100Mi
+      cpu: "100m"
+      memory: "100Mi"
   entrypoint:
-    command: [cmd]
-    args: [arg]
+    command: 
+    - cmd
+    args: 
+    - arg
   persistence:
     enabled: true
     storageClass: gp3
@@ -43,3 +44,19 @@ spec:
     serviceAccount: sample
     additionalEnvVars: 
       sample: value
+  configuration: 
+  - name: devops-common-scheduler
+    usageMethod: AsEnvVariables
+    sensitive: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devops-common-scheduler
+  namespace: devops
+  annotations:
+    filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/devops/devops-common/scheduler
+data: 
+  key1: val1
+  key2: val2
+  key3: val3
