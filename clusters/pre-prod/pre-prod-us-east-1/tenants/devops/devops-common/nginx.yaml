@@ -58,6 +58,9 @@ spec:
   - name: devops-common-nginx
     usageMethod: AsEnvVariables
     sensitive: false
+  - name: sample
+    usageMethod: AsEnvVariables
+    sensitive: true
 ---
 apiVersion: v1
 kind: ConfigMap
