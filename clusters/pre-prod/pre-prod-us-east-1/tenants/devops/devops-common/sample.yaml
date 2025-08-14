@@ -15,8 +15,10 @@ spec:
       cpu: 100m
       memory: 100Mi
   entrypoint:
-    command: [cmd]
-    args: [arg]
+    command:
+      - cmd
+    args:
+      - arg
   autoscaling:
     controller: HorizontalPodAutoscaler
     maxReplicas: 10
@@ -34,9 +36,11 @@ spec:
   loadbalancing:
     useCommonLoadbalancer: true
     public: true
-    externalDNSNames: [sample.plivo.com]
+    externalDNSNames:
+      - sample.plivo.com
     customListenerRules: []
-    listenerPorts: [443]
+    listenerPorts:
+      - 443
     targetGroup:
       healthcheck:
         path: /
@@ -45,9 +49,9 @@ spec:
     runAsUser: 0
     runAsNonRoot: false
     runAsGroup: 0
-  consul: "https://consul.non-prod.plivops.com"
+  consul: https://consul.non-prod.plivops.com
   containerPort: 8080
-  image: "nginx:latest"
+  image: nginx
   advanced:
-    additionalEnvVars: 
+    additionalEnvVars:
       key: value
