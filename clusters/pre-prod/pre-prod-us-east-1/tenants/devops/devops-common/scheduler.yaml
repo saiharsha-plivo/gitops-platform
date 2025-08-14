@@ -8,16 +8,16 @@ metadata:
 spec:
   resources:
     requests:
-      cpu: "100m"
-      memory: "100Mi"
+      cpu: 100m
+      memory: 100Mi
     limits:
-      cpu: "100m"
-      memory: "100Mi"
+      cpu: 100m
+      memory: 100Mi
   entrypoint:
-    command: 
-    - cmd
-    args: 
-    - arg
+    command:
+      - cmd
+    args:
+      - arg
   persistence:
     enabled: true
     storageClass: gp3
@@ -37,17 +37,18 @@ spec:
     runAsUser: 0
     runAsNonRoot: false
     runAsGroup: 0
-  image: "scheduler:latest"
+  image: scheduler
   schedule: "* * * * *"
   advanced:
     exposePodInfo: true
     serviceAccount: sample
-    additionalEnvVars: 
+    additionalEnvVars:
       sample: value
-  configuration: 
-  - name: devops-common-scheduler
-    usageMethod: AsEnvVariables
-    sensitive: false
+  configuration:
+    - name: devops-common-scheduler
+      usageMethod: AsEnvVariables
+      sensitive: false
+
 ---
 apiVersion: v1
 kind: ConfigMap
