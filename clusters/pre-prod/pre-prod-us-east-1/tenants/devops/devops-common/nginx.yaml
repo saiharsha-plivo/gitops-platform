@@ -55,7 +55,10 @@ spec:
     - name: devops-common-nginx
       usageMethod: AsEnvVariables
       sensitive: false
-    - name: sample
+    - name: sample-1
+      usageMethod: AsEnvVariables
+      sensitive: true
+    - name: sample-2
       usageMethod: AsEnvVariables
       sensitive: true
 ---
