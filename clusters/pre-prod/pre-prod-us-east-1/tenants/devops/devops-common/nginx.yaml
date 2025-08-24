@@ -51,4 +51,33 @@ spec:
   image: "nginx:latest"
   advanced:
     additionalEnvVars: {}
-  configuration: []
+  configuration: 
+    - name: devops-common-nginx-externalsecret
+      usageMethod: AsEnvVariables
+      sensitive: true
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: devops-common-nginx-externalsecret
+  namespace: devops
+  annotations:
+    filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/devops/devops-common/nginx
+spec:
+  secretStoreRef:
+    name: devops
+    kind: SecretStore
+  target:
+    creationPolicy: owner
+    template:
+      engineVersion: v2
+      data: 
+        painter: "{{ .painter }}"
+        debugger: "{{ .debugger }}"
+  data: 
+    - secretKey: painter
+      remoteRef: 
+        key: pre-prod/devops/pgadmin/LDAP_BIND_PASSWORD
+    - secretKey: debugger
+      remoteRef: 
+        key: pre-prod/devops/pgadmin/PGADMIN_DEFAULT_PASSWORD
