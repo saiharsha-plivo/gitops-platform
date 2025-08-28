@@ -9,3 +9,4 @@ metadata:
 data: 
   sample: value
   example: key
+  seen: test
