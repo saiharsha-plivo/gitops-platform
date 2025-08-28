@@ -8,4 +8,4 @@ metadata:
     filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/devops/devops-common/config.yaml
 data: 
   sample: value
-  test: sample
+  example: key
