@@ -7,6 +7,7 @@ metadata:
     redis.plivo.com/bandwidth: 0
     redis.plivo.com/userMemory: 20mb
     redis.plivo.com/throughput: 0
+    filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/devops/devops-common/resources/redis-paas.yaml
 spec:
   releaseName: redis-paas
   interval: 1m0s
@@ -69,9 +70,9 @@ spec:
         size: 1Gi
       resources:
         requests:
-          memory: 20Mi
+          memory: 60Mi
         limits:
-          memory: 20Mi
+          memory: 60Mi
       replicaCount: 2
       tolerations:
         - key: ops.plivo.com/dedicated-for
@@ -86,7 +87,6 @@ spec:
                     operator: In
                     values:
                       - redis-paas
-      topologySpreadConstraints: []
     sentinel:
       image:
         registry: 857556598075.dkr.ecr.us-west-1.amazonaws.com
@@ -102,3 +102,143 @@ spec:
         limits:
           memory: 20Mi
       masterSet: master
+    networkPolicy:
+      enabled: true
+      allowExternal: false
+      allowExternalEgress: false
+      extraIngress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: common-haproxy-redis
+                  app.kubernetes.io/name: haproxy
+          ports:
+            - port: 6379
+              protocol: TCP
+        - from:
+            - podSelector:
+                matchLabels:
+                  app: redis-extra-sentinel-paas
+          ports:
+            - port: 26379
+              protocol: TCP
+            - port: 6379
+              protocol: TCP
+      extraEgress:
+        - to:
+            - podSelector:
+                matchLabels:
+                  app: redis-extra-sentinel-paas
+          ports:
+            - port: 6379
+              protocol: TCP
+            - port: 26379
+              protocol: TCP
+      ingressNSMatchLabels: {}
+      ingressNSPodMatchLabels: {}
+      metrics:
+        allowExternal: false
+        ingressNSMatchLabels:
+          kubernetes.io/metadata.name: monitoring
+        ingressNSPodMatchLabels: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-extra-sentinel-paas
+  namespace: devops
+  labels:
+    app: redis-extra-sentinel-paas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-extra-sentinel-paas
+  template:
+    metadata:
+      labels:
+        app: redis-extra-sentinel-paas
+    spec:
+      tolerations:
+        - key: ops.plivo.com/dedicated-for
+          value: devops-redis-sentinel-spot
+      containers:
+        - name: sentinel
+          image: 857556598075.dkr.ecr.us-west-1.amazonaws.com/plivo/bitnami-redis/redis-sentinel-7.4.0:25.02.26.1480
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi
+          ports:
+            - name: sentinel
+              containerPort: 26379
+          env:
+            - name: REDIS_MASTER_SET
+              value: master
+            - name: REDIS_MASTER_HOST
+              value: redis-paas-node-0.redis-paas-headless.devops.svc.cluster.local
+            - name: REDIS_MASTER_PORT_NUMBER
+              value: '6379'
+            - name: REDIS_SENTINEL_QUORUM
+              value: '2'
+            - name: REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS
+              value: '1000'
+            - name: REDIS_SENTINEL_FAILOVER_TIMEOUT
+              value: '180000'
+            - name: REDIS_SENTINEL_RESOLVE_HOSTNAMES
+              value: 'yes'
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - '-lc'
+                - /opt/bitnami/redis-sentinel/bin/redis-cli -p 26379 ping | grep PONG
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-extra-sentinel-paas-isolation
+  namespace: messaging
+spec:
+  podSelector:
+    matchLabels:
+      app: redis-extra-sentinel-paas
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: redis-paas
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 26379
+        - protocol: TCP
+          port: 6379
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: redis-paas
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 26379
