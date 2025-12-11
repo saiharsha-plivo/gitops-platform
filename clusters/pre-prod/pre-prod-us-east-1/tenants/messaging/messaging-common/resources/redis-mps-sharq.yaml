@@ -7,6 +7,7 @@ metadata:
     redis.plivo.com/bandwidth: 0
     redis.plivo.com/userMemory: 5000mb
     redis.plivo.com/throughput: 0
+    filepath: clusters/pre-prod/pre-prod-us-east-1/tenants/messaging/messaging-common/resources/redis-mps-sharq.yaml
 spec:
   releaseName: redis-mps-sharq
   interval: 1m0s
@@ -158,8 +159,46 @@ spec:
         limits:
           memory: 20Mi
       masterSet: master
+    networkPolicy:
+      enabled: true
+      allowExternal: false
+      allowExternalEgress: false
+      extraIngress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: common-haproxy-redis
+                  app.kubernetes.io/name: haproxy
+          ports:
+            - port: 6379
+              protocol: TCP
+        - from:
+            - podSelector:
+                matchLabels:
+                  app: redis-extra-sentinel-mps-sharq
+          ports:
+            - port: 26379
+              protocol: TCP
+            - port: 6379
+              protocol: TCP
+      extraEgress:
+        - to:
+            - podSelector:
+                matchLabels:
+                  app: redis-extra-sentinel-mps-sharq
+          ports:
+            - port: 6379
+              protocol: TCP
+            - port: 26379
+              protocol: TCP
+      ingressNSMatchLabels: {}
+      ingressNSPodMatchLabels: {}
+      metrics:
+        allowExternal: false
+        ingressNSMatchLabels:
+          kubernetes.io/metadata.name: monitoring
+        ingressNSPodMatchLabels: {}
 
-      
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -218,7 +257,48 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
 
-            
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-extra-sentinel-mps-sharq-isolation
+  namespace: messaging
+spec:
+  podSelector:
+    matchLabels:
+      app: redis-extra-sentinel-mps-sharq
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: redis-mps-sharq
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 26379
+        - protocol: TCP
+          port: 6379
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: redis-mps-sharq
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 26379
 
 ---
 apiVersion: v1
