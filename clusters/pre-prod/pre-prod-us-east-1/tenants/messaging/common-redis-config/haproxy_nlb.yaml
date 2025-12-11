@@ -1,0 +1,244 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: common-haproxy-redis
+  namespace: messaging
+spec:
+  releaseName: common-haproxy-redis
+  interval: 1m0s
+  install:
+    remediation:
+      retries: 5
+  chart:
+    spec:
+      chart: haproxy
+      version: 2.1.6
+      sourceRef:
+        kind: GitRepository
+        name: devops-helm-charts
+        namespace: flux-system
+  values:
+    image:
+      registry: 857556598075.dkr.ecr.us-west-1.amazonaws.com
+      repository: plivo/haproxy-3.0.5
+      tag: haproxy-3.0.5
+    podAnnotations:
+      prometheus.io/path: /metrics
+      prometheus.io/port: '8405'
+      prometheus.io/scheme: http
+      prometheus.io/scrape: 'true'
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 20m
+        memory: 80Mi
+      limits:
+        cpu: 120m
+        memory: 128Mi
+    tolerations:
+      - key: ops.plivo.com/dedicated-for
+        value: messaging
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: ops.plivo.com/dedicated-for
+                  operator: In
+                  values:
+                    - messaging
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                    - common-haproxy-redis
+    containerPorts:
+      - name: metrics
+        containerPort: 8405
+      - name: default
+        containerPort: 6378
+      - name: opensearch
+        containerPort: 6379
+      - name: mps-sharq
+        containerPort: 6383
+      - name: nps-sharq
+        containerPort: 6384
+      - name: mps-sharq2
+        containerPort: 6386
+    service:
+      type: ClusterIP
+      ports:
+        - name: tcp-metrics
+          protocol: TCP
+          port: 8405
+        - name: tcp-redis-default
+          protocol: TCP
+          port: 6378
+          targetPort: default
+        - name: tcp-redis-dev-sms-noncluster
+          protocol: TCP
+          port: 6379
+          targetPort: dev-sms-nonclus
+        - name: tcp-redis-mps-sharq
+          protocol: TCP
+          port: 6383
+          targetPort: mps-sharq
+        - name: tcp-redis-nps-sharq
+          protocol: TCP
+          port: 6384
+          targetPort: nps-sharq
+        - name: tcp-redis-mps-sharq2
+          protocol: TCP
+          port: 6386
+          targetPort: mps-sharq2
+    configuration: |-
+      resolvers mydns
+        parse-resolv-conf
+        resolve_retries     100
+        hold other           5s
+        hold refused         5s
+        hold nx              5s
+        hold timeout         5s
+        hold valid           5s
+        hold obsolete        5s
+
+      # Sets the default connection settings for Redis
+      defaults REDIS
+        default-server init-addr libc,none
+        mode tcp
+        timeout connect 4s
+        timeout server 360s
+        timeout client 360s
+        timeout check 2s
+        option redispatch
+
+      frontend dummy-frontend  
+        bind *:6378
+        default_backend dummy-backend  
+
+      backend dummy-backend  
+        server dummy 127.0.0.1:8080
+
+      frontend prometheus
+        bind :8405
+        mode http
+        http-request use-service prometheus-exporter
+        no log
+
+      frontend ft_dev-sms-noncluster
+          bind *:6379
+          use_backend bk_dev-sms-noncluster
+      backend bk_dev-sms-noncluster
+          mode tcp
+          option tcp-check
+          tcp-check connect
+          tcp-check send PING\r\n
+          tcp-check expect string +PONG
+          tcp-check send "info replication\r\n"
+          tcp-check expect string role:master
+          tcp-check send QUIT\r\n
+          tcp-check expect string +OK
+
+          server R0 redis-dev-sms-noncluster-node-0.redis-dev-sms-noncluster-headless.messaging.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
+          server R1 redis-dev-sms-noncluster-node-1.redis-dev-sms-noncluster-headless.messaging.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
+      frontend ft_mps-sharq
+          bind *:6383
+          use_backend bk_mps-sharq
+      backend bk_mps-sharq
+          mode tcp
+          option tcp-check
+          tcp-check connect
+          tcp-check send PING\r\n
+          tcp-check expect string +PONG
+          tcp-check send "info replication\r\n"
+          tcp-check expect string role:master
+          tcp-check send QUIT\r\n
+          tcp-check expect string +OK
+
+          server R0 redis-mps-sharq-node-0.redis-mps-sharq-headless.messaging.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
+          server R1 redis-mps-sharq-node-1.redis-mps-sharq-headless.messaging.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
+      frontend ft_nps-sharq
+          bind *:6384
+          use_backend bk_nps-sharq
+      backend bk_nps-sharq
+          mode tcp
+          option tcp-check
+          tcp-check connect
+          tcp-check send PING\r\n
+          tcp-check expect string +PONG
+          tcp-check send "info replication\r\n"
+          tcp-check expect string role:master
+          tcp-check send QUIT\r\n
+          tcp-check expect string +OK
+
+          server R0 redis-nps-sharq-node-0.redis-nps-sharq-headless.messaging.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
+          server R1 redis-nps-sharq-node-1.redis-nps-sharq-headless.messaging.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
+
+
+      frontend ft_mps-sharq2
+          bind *:6386
+          use_backend bk_mps-sharq2
+      backend bk_mps-sharq2
+          mode tcp
+          option tcp-check
+          tcp-check connect
+          tcp-check send PING\r\n
+          tcp-check expect string +PONG
+          tcp-check send "info replication\r\n"
+          tcp-check expect string role:master
+          tcp-check send QUIT\r\n
+          tcp-check expect string +OK
+
+          server R0 redis-mps-sharq2-node-0.redis-mps-sharq2-headless.messaging.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
+          server R1 redis-mps-sharq2-node-1.redis-mps-sharq2-headless.messaging.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
+    extraEnvVars: []
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: common-haproxy-redis-nlb
+  namespace: messaging
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: tcp
+    service.beta.kubernetes.io/load-balancer-source-ranges: 10.0.0.0/8
+    service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: Team=messaging,Billing=messaging
+spec:
+  type: LoadBalancer
+  ports:
+    - name: tcp-default
+      protocol: TCP
+      port: 6378
+      targetPort: 6378
+    - name: tcp-redis-dev-sms-noncluster
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+    - name: tcp-redis-mps-sharq
+      protocol: TCP
+      port: 6383
+      targetPort: 6383
+    - name: tcp-redis-nps-sharq
+      protocol: TCP
+      port: 6384
+      targetPort: 6384
+    - name: tcp-redis-mps-sharq2
+      protocol: TCP
+      port: 6386
+      targetPort: 6386
+  selector:
+    app.kubernetes.io/component: haproxy
+    app.kubernetes.io/instance: common-haproxy-redis
+    app.kubernetes.io/name: haproxy
