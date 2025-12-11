@@ -63,7 +63,7 @@ spec:
       save 60 10000
     replica:
       extraFlags:
-      - '--loadmodule /opt/bitnami/redis/modules/redisjson.so'
+        - '--loadmodule /opt/bitnami/redis/modules/redisjson.so'
       persistence:
         enabled: true
         storageClass: gp3
@@ -75,75 +75,75 @@ spec:
           memory: 1540Mi
       replicaCount: 2
       tolerations:
-      - key: ops.plivo.com/dedicated-for
-        value: messaging
+        - key: ops.plivo.com/dedicated-for
+          value: messaging
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-          - topologyKey: kubernetes.io/hostname
-            labelSelector:
-              matchExpressions:
-              - key: app.kubernetes.io/name
-                operator: In
-                values:
-                - redis-mps-sharq2
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - redis-mps-sharq2
       lifecycleHooks:
         postStart:
           exec:
             command:
-            - /bin/bash
-            - '-c'
-            - |-
-              nohup /bin/bash -c '(
-              LOG_FILE=/tmp/poststart.err
+              - /bin/bash
+              - '-c'
+              - |-
+                nohup /bin/bash -c '(
+                LOG_FILE=/tmp/poststart.err
 
-              echo "Waiting for Redis to be ready..."
-              until redis-cli ping | grep PONG; do 
-                sleep 1
-              done
+                echo "Waiting for Redis to be ready..."
+                until redis-cli ping | grep PONG; do 
+                  sleep 1
+                done
 
-              echo "Loading Lua scripts efficiently..."
+                echo "Loading Lua scripts efficiently..."
 
-              for script in /luascripts/*.lua; do
-                [ -f "$script" ] || continue
-                echo "Processing $(basename "$script")..."
+                for script in /luascripts/*.lua; do
+                  [ -f "$script" ] || continue
+                  echo "Processing $(basename "$script")..."
 
-                SHA=$(cat "$script" | xargs -0 redis-cli --raw SCRIPT LOAD 2>>$LOG_FILE)
-                if [ -z "$SHA" ]; then
-                  echo "Error loading script: $(basename "$script")"
-                  exit 1
-                fi
+                  SHA=$(cat "$script" | xargs -0 redis-cli --raw SCRIPT LOAD 2>>$LOG_FILE)
+                  if [ -z "$SHA" ]; then
+                    echo "Error loading script: $(basename "$script")"
+                    exit 1
+                  fi
 
-                echo "$(basename "$script"): $SHA"
-              done
+                  echo "$(basename "$script"): $SHA"
+                done
 
-              # Mark readiness for probe
-              echo "All scripts loaded successfully."
-              touch /tmp/scripts-loaded
-              )' >/tmp/poststart.out 2>&1 & disown
+                # Mark readiness for probe
+                echo "All scripts loaded successfully."
+                touch /tmp/scripts-loaded
+                )' >/tmp/poststart.out 2>&1 & disown
       customReadinessProbe:
         exec:
           command:
-          - sh
-          - '-c'
-          - |-
-            if [ -f /tmp/scripts-loaded ]; then
-              exec /health/ping_readiness_local.sh 1
-            else
-              exit 1
-            fi
+            - sh
+            - '-c'
+            - |-
+              if [ -f /tmp/scripts-loaded ]; then
+                exec /health/ping_readiness_local.sh 1
+              else
+                exit 1
+              fi
         initialDelaySeconds: 20
         timeoutSeconds: 1
         periodSeconds: 5
         successThreshold: 1
         failureThreshold: 5
       extraVolumes:
-      - name: lua-scripts
-        configMap:
-          name: lua-redis-mps-sharq2
+        - name: lua-scripts
+          configMap:
+            name: lua-redis-mps-sharq2
       extraVolumeMounts:
-      - name: lua-scripts
-        mountPath: /luascripts
+        - name: lua-scripts
+          mountPath: /luascripts
     sentinel:
       image:
         registry: 857556598075.dkr.ecr.us-west-1.amazonaws.com
@@ -152,13 +152,13 @@ spec:
       enabled: true
       quorum: 2
       configuration: |
-        sentinel down-after-milliseconds master-mps-sharq2 1000
+        sentinel down-after-milliseconds master 1000
       resources:
         requests:
           memory: 20Mi
         limits:
           memory: 20Mi
-      masterSet: master-mps-sharq2
+      masterSet: master
     networkPolicy:
       enabled: true
       allowExternal: false
@@ -198,6 +198,7 @@ spec:
         ingressNSMatchLabels:
           kubernetes.io/metadata.name: monitoring
         ingressNSPodMatchLabels: {}
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -217,44 +218,45 @@ spec:
         app: redis-extra-sentinel-mps-sharq2
     spec:
       tolerations:
-      - key: ops.plivo.com/dedicated-for
-        value: messaging-redis-sentinel-spot
+        - key: ops.plivo.com/dedicated-for
+          value: messaging-redis-sentinel-spot
       containers:
-      - name: sentinel
-        image: 857556598075.dkr.ecr.us-west-1.amazonaws.com/plivo/bitnami-redis/redis-sentinel-7.4.0:25.02.26.1480
-        resources:
-          requests:
-            cpu: 100m
-            memory: 100Mi
-          limits:
-            cpu: 100m
-            memory: 100Mi
-        ports:
         - name: sentinel
-          containerPort: 26379
-        env:
-        - name: REDIS_MASTER_SET
-          value: master-mps-sharq2
-        - name: REDIS_MASTER_HOST
-          value: redis-mps-sharq2-node-0.redis-mps-sharq2-headless.messaging.svc.cluster.local
-        - name: REDIS_MASTER_PORT_NUMBER
-          value: '6379'
-        - name: REDIS_SENTINEL_QUORUM
-          value: '2'
-        - name: REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS
-          value: '1000'
-        - name: REDIS_SENTINEL_FAILOVER_TIMEOUT
-          value: '180000'
-        - name: REDIS_SENTINEL_RESOLVE_HOSTNAMES
-          value: 'yes'
-        readinessProbe:
-          exec:
-            command:
-            - bash
-            - '-lc'
-            - /opt/bitnami/redis-sentinel/bin/redis-cli -p 26379 ping | grep PONG
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          image: 857556598075.dkr.ecr.us-west-1.amazonaws.com/plivo/bitnami-redis/redis-sentinel-7.4.0:25.02.26.1480
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi
+          ports:
+            - name: sentinel
+              containerPort: 26379
+          env:
+            - name: REDIS_MASTER_SET
+              value: master
+            - name: REDIS_MASTER_HOST
+              value: redis-mps-sharq2-node-0.redis-mps-sharq2-headless.messaging.svc.cluster.local
+            - name: REDIS_MASTER_PORT_NUMBER
+              value: '6379'
+            - name: REDIS_SENTINEL_QUORUM
+              value: '2'
+            - name: REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS
+              value: '1000'
+            - name: REDIS_SENTINEL_FAILOVER_TIMEOUT
+              value: '180000'
+            - name: REDIS_SENTINEL_RESOLVE_HOSTNAMES
+              value: 'yes'
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - '-lc'
+                - /opt/bitnami/redis-sentinel/bin/redis-cli -p 26379 ping | grep PONG
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -266,37 +268,38 @@ spec:
     matchLabels:
       app: redis-extra-sentinel-mps-sharq2
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
   ingress:
     - from:
-      - podSelector:
-          matchLabels:
-            app.kubernetes.io/instance: redis-mps-sharq2
-            app.kubernetes.io/name: redis
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: redis-mps-sharq2
+              app.kubernetes.io/name: redis
       ports:
-      - protocol: TCP
-        port: 26379
-      - protocol: TCP
-        port: 6379
+        - protocol: TCP
+          port: 26379
+        - protocol: TCP
+          port: 6379
   egress:
     - to:
-      - namespaceSelector: {}
+        - namespaceSelector: {}
       ports:
-      - protocol: UDP
-        port: 53
-      - protocol: TCP
-        port: 53
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
     - to:
-      - podSelector:
-          matchLabels:
-            app.kubernetes.io/instance: redis-mps-sharq2
-            app.kubernetes.io/name: redis
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: redis-mps-sharq2
+              app.kubernetes.io/name: redis
       ports:
-      - protocol: TCP
-        port: 6379
-      - protocol: TCP
-        port: 26379
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 26379
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -304,8 +307,7 @@ metadata:
   name: lua-redis-mps-sharq2
   namespace: messaging
 data:
-  dequeue.lua.lua: "-- script to dequeue a job from sharq.\n\n-- input:\n--     KEYS[1] - <key_prefix>\n--     KEYS[2] - <queue_type>\n--\n--     ARGV[1] - <current_timestamp>\n--     ARGV[2] - <job_expiry_interval>\n-- output:\n--     { queue_id, job_id, payload, requeues_remaining }\n\n\nlocal prefix = KEYS[1]\nlocal queue_type = KEYS[2]\n\nlocal current_timestamp = ARGV[1]\nlocal job_expiry_interval = ARGV[2]\n\n\nlocal ready_queue_id_list = redis.call('ZRANGEBYSCORE', prefix .. ':' .. queue_type, 0, current_timestamp)\nif next(ready_queue_id_list) ~= nil then\n   -- there is a queue ready to be dequeued.\n   local ready_queue_id = ready_queue_id_list[1]\n   -- dequeue a job from the job queue.\n   local job_id = redis.call('LPOP', prefix .. ':' .. queue_type .. ':' .. ready_queue_id)\n   -- get the payload for this job\n   local payload = redis.call('HGET', prefix .. ':payload', queue_type .. ':' .. ready_queue_id .. ':' .. job_id)\n   -- update the time keeper with the current dequeue time.\n   redis.call('PSETEX', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':time', job_expiry_interval, current_timestamp)\n   -- check if there are any more jobs of this queue in the job queue.\n   if redis.call('LLEN', prefix .. ':' .. queue_type .. ':' .. ready_queue_id) == 0 then\n      -- there are no more jobs of this queue. remove this queue from the ready sorted set.\n      redis.call('ZREM', prefix .. ':' .. queue_type, ready_queue_id)\n      -- now check if the ready sorted set is empty.\n      if redis.call('EXISTS', prefix .. ':' .. queue_type) ~= 1 then\n\t -- the ready sorted set is empty. remove this 'queue_type' from\n\t -- the metris ready queue type set\n\t redis.call('SREM', prefix .. ':ready:queue_type', queue_type)\n      end\n   else\n      -- there are more jobs in the queue. update the next\n      -- dequeue time for this queue in the ready sorted set.\n      local next_dequeue_time = current_timestamp\n      local interval = tonumber(redis.call('HGET', prefix .. ':interval', queue_type .. ':' .. ready_queue_id))\n      if interval then\n\t next_dequeue_time = current_timestamp + interval\n      end\n      redis.call('ZADD', prefix .. ':' .. queue_type, next_dequeue_time, ready_queue_id)\n   end\n   local job_expiry_time = current_timestamp + job_expiry_interval\n   -- finally, add the job_id and queue_id that was dequeued into the active sorted set.\n   redis.call('ZADD', prefix .. ':' .. queue_type .. ':active', job_expiry_time, ready_queue_id .. ':' .. job_id)\n   -- add the queue_type to metrics active queue type set.\n   redis.call('SADD', prefix .. ':active:queue_type', queue_type)\n\n   -- get the requeues_remaining for this job\n   local requeues_remaining = redis.call('HGET', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':requeues_remaining', job_id)\n\n   -- update the metrics counters\n   -- update global counter.\n   local timestamp_minute = math.floor(current_timestamp/60000) * 60000 -- get the epoch for the minute\n   local expiry_time = math.floor((timestamp_minute + 600000) / 1000) -- store the data for 10 minutes.\n   if redis.call('EXISTS', prefix .. ':dequeue_counter:' .. timestamp_minute) ~= 1 then\n      -- counter does not exists. set the initial value and expiry.\n      redis.call('SET', prefix .. ':dequeue_counter:' .. timestamp_minute, 1)\n      redis.call('EXPIREAT', prefix .. ':dequeue_counter:' .. timestamp_minute, expiry_time)\n   else\n      -- counter already exists. just increment the value.\n      redis.call('INCR', prefix .. ':dequeue_counter:' .. timestamp_minute)\n   end\n\n   -- update the current queue counter.\n   if redis.call('EXISTS', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':dequeue_counter:' .. timestamp_minute) ~= 1 then\n      -- counter does not exists. set the initial value and expiry.\n      redis.call('SET', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':dequeue_counter:' .. timestamp_minute, 1)\n      redis.call('EXPIREAT', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':dequeue_counter:' .. timestamp_minute,
-    expiry_time)\n   else\n      -- counter already exists. just increment the value.\n      redis.call('INCR', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':dequeue_counter:' .. timestamp_minute)\n   end\n\n   return { ready_queue_id, job_id, payload, requeues_remaining }\nelse\n   return { }\nend"
+  dequeue.lua.lua: "-- script to dequeue a job from sharq.\n\n-- input:\n--     KEYS[1] - <key_prefix>\n--     KEYS[2] - <queue_type>\n--\n--     ARGV[1] - <current_timestamp>\n--     ARGV[2] - <job_expiry_interval>\n-- output:\n--     { queue_id, job_id, payload, requeues_remaining }\n\n\nlocal prefix = KEYS[1]\nlocal queue_type = KEYS[2]\n\nlocal current_timestamp = ARGV[1]\nlocal job_expiry_interval = ARGV[2]\n\n\nlocal ready_queue_id_list = redis.call('ZRANGEBYSCORE', prefix .. ':' .. queue_type, 0, current_timestamp)\nif next(ready_queue_id_list) ~= nil then\n   -- there is a queue ready to be dequeued.\n   local ready_queue_id = ready_queue_id_list[1]\n   -- dequeue a job from the job queue.\n   local job_id = redis.call('LPOP', prefix .. ':' .. queue_type .. ':' .. ready_queue_id)\n   -- get the payload for this job\n   local payload = redis.call('HGET', prefix .. ':payload', queue_type .. ':' .. ready_queue_id .. ':' .. job_id)\n   -- update the time keeper with the current dequeue time.\n   redis.call('PSETEX', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':time', job_expiry_interval, current_timestamp)\n   -- check if there are any more jobs of this queue in the job queue.\n   if redis.call('LLEN', prefix .. ':' .. queue_type .. ':' .. ready_queue_id) == 0 then\n      -- there are no more jobs of this queue. remove this queue from the ready sorted set.\n      redis.call('ZREM', prefix .. ':' .. queue_type, ready_queue_id)\n      -- now check if the ready sorted set is empty.\n      if redis.call('EXISTS', prefix .. ':' .. queue_type) ~= 1 then\n\t -- the ready sorted set is empty. remove this 'queue_type' from\n\t -- the metris ready queue type set\n\t redis.call('SREM', prefix .. ':ready:queue_type', queue_type)\n      end\n   else\n      -- there are more jobs in the queue. update the next\n      -- dequeue time for this queue in the ready sorted set.\n      local next_dequeue_time = current_timestamp\n      local interval = tonumber(redis.call('HGET', prefix .. ':interval', queue_type .. ':' .. ready_queue_id))\n      if interval then\n\t next_dequeue_time = current_timestamp + interval\n      end\n      redis.call('ZADD', prefix .. ':' .. queue_type, next_dequeue_time, ready_queue_id)\n   end\n   local job_expiry_time = current_timestamp + job_expiry_interval\n   -- finally, add the job_id and queue_id that was dequeued into the active sorted set.\n   redis.call('ZADD', prefix .. ':' .. queue_type .. ':active', job_expiry_time, ready_queue_id .. ':' .. job_id)\n   -- add the queue_type to metrics active queue type set.\n   redis.call('SADD', prefix .. ':active:queue_type', queue_type)\n\n   -- get the requeues_remaining for this job\n   local requeues_remaining = redis.call('HGET', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':requeues_remaining', job_id)\n\n   -- update the metrics counters\n   -- update global counter.\n   local timestamp_minute = math.floor(current_timestamp/60000) * 60000 -- get the epoch for the minute\n   local expiry_time = math.floor((timestamp_minute + 600000) / 1000) -- store the data for 10 minutes.\n   if redis.call('EXISTS', prefix .. ':dequeue_counter:' .. timestamp_minute) ~= 1 then\n      -- counter does not exists. set the initial value and expiry.\n      redis.call('SET', prefix .. ':dequeue_counter:' .. timestamp_minute, 1)\n      redis.call('EXPIREAT', prefix .. ':dequeue_counter:' .. timestamp_minute, expiry_time)\n   else\n      -- counter already exists. just increment the value.\n      redis.call('INCR', prefix .. ':dequeue_counter:' .. timestamp_minute)\n   end\n\n   -- update the current queue counter.\n   if redis.call('EXISTS', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':dequeue_counter:' .. timestamp_minute) ~= 1 then\n      -- counter does not exists. set the initial value and expiry.\n      redis.call('SET', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':dequeue_counter:' .. timestamp_minute, 1)\n      redis.call('EXPIREAT', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':dequeue_counter:' .. timestamp_minute, expiry_time)\n   else\n      -- counter already exists. just increment the value.\n      redis.call('INCR', prefix .. ':' .. queue_type .. ':' .. ready_queue_id .. ':dequeue_counter:' .. timestamp_minute)\n   end\n\n   return { ready_queue_id, job_id, payload, requeues_remaining }\nelse\n   return { }\nend"
   enqueue.lua.lua: |-
     -- script to enqueue a job into sharq.
 
