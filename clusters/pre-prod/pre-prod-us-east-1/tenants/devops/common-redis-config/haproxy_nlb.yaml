@@ -104,7 +104,7 @@ spec:
           protocol: TCP
           port: 6379
           targetPort: paas
-    configuration: |+
+    configuration: |-
       resolvers mydns
         parse-resolv-conf
         resolve_retries     100
@@ -153,7 +153,6 @@ spec:
 
           server R0 redis-paas-node-0.redis-paas-headless.devops.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
           server R1 redis-paas-node-1.redis-paas-headless.devops.svc.cluster.local:6379 resolvers mydns check inter 500ms fall 1 rise 1
-
     extraEnvVars: []
 
 ---
