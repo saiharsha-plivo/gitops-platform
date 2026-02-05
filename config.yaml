@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: harsha-test
+  annotations:
+    'plivo/team': 'devops'
+    'backstage.io/kubernetes-namespace': 'devops'
+    'plivo/secret-app-name': 'harsha-test'
+    'plivo/config-app-name': 'harsha-test'
+spec:
+  type: service
+  lifecycle: unknown
+  owner: devops
