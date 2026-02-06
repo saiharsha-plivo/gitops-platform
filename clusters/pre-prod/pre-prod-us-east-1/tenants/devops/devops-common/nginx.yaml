@@ -48,7 +48,7 @@ spec:
     runAsNonRoot: true
     runAsGroup: 10001
   consul: "https://consul.non-prod.plivops.com"
-  containerPort: 80
+  containerPort: 443
   image: nginx
   advanced:
     additionalEnvVars: {}
