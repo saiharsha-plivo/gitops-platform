@@ -1,0 +1,35 @@
+apiVersion: aws.crossplane.io/v1beta1
+kind: Sqs
+metadata:
+  name: pp-dvops-de-co-sample
+spec:
+  provider: "providerconfig-aws"
+  managementPolicies:
+    - "*"
+  deletionPolicy: "Delete"
+  region: "us-east-1"
+  Queue:
+    name: pp-dvops-de-co-sample
+    fifoQueue: false
+    delaySeconds: 0
+    messageRetentionPeriod: 345600
+    visibilityTimeout: 30
+    maximumMessageSize: 262144
+    receiveMessageWaitTimeSeconds: 0
+    sseEnabled: false
+    contentBasedDeduplication: false
+    kmsDataKeyReusePeriodSeconds: 300
+    redrivePolicy:
+      deadLetterTargetArn: "sampletest"
+      maxReceiveCount: 10
+    tags:
+      Environment: "pre-prod"
+      Service: "devops-common"
+      Team: "devops"
+      Billing: "devops"
+      ManagedBy: "crossplane"
+      k8s.name: "pp-dvops-de-co-sample"
+      k8s.groupversion: "aws.crossplane.io/v1beta1"
+      k8s.kind: sqs
+      k8s.managedresourcekind: Queue
+      Name: "pp-dvops-de-co-sample"
