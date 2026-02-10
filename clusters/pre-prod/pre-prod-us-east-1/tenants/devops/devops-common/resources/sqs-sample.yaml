@@ -21,7 +21,7 @@ spec:
     kmsDataKeyReusePeriodSeconds: 300
     redrivePolicy:
       deadLetterTargetArn: "sampletest"
-      maxReceiveCount: 10
+      maxReceiveCount: 1000
     tags:
       Environment: "pre-prod"
       Service: "devops-common"
